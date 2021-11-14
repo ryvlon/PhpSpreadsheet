@@ -13,7 +13,7 @@ class HtmlTest extends TestCase
      * @param mixed $expected
      * @param mixed $input
      */
-    public function testUtf8EncodingSupport($expected, $input)
+    public function testUtf8EncodingSupport($expected, $input): void
     {
         $html = new Html();
         $actual = $html->toRichTextObject($input);
@@ -21,7 +21,7 @@ class HtmlTest extends TestCase
         self::assertSame($expected, $actual->getPlainText());
     }
 
-    public function providerUtf8EncodingSupport()
+    public function providerUtf8EncodingSupport(): array
     {
         return [
             ['foo', 'foo'],

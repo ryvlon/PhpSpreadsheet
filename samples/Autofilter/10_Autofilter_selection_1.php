@@ -31,7 +31,8 @@ $spreadsheet->getActiveSheet()->setCellValue('A1', 'Financial Year')
     ->setCellValue('D1', 'Date')
     ->setCellValue('E1', 'Sales Value')
     ->setCellValue('F1', 'Expenditure');
-$startYear = $endYear = $currentYear = date('Y');
+$dateTime = new DateTime();
+$startYear = $endYear = $currentYear = (int) $dateTime->format('Y');
 --$startYear;
 ++$endYear;
 
@@ -52,25 +53,27 @@ $row = 2;
 foreach ($years as $year) {
     foreach ($periods as $period) {
         foreach ($countries as $country) {
-            $endDays = date('t', mktime(0, 0, 0, $period, 1, (int) $year));
+            $dateString = sprintf('%04d-%02d-01T00:00:00', $year, $period);
+            $dateTime = new DateTime($dateString);
+            $endDays = (int) $dateTime->format('t');
             for ($i = 1; $i <= $endDays; ++$i) {
                 $eDate = Date::formattedPHPToExcel(
                     $year,
                     $period,
                     $i
                 );
-                $value = rand(500, 1000) * (1 + (rand(-1, 1) / 4));
+                $value = mt_rand(500, 1000) * (1 + (mt_rand(-1, 1) / 4));
                 $salesValue = $invoiceValue = null;
-                $incomeOrExpenditure = rand(-1, 1);
+                $incomeOrExpenditure = mt_rand(-1, 1);
                 if ($incomeOrExpenditure == -1) {
-                    $expenditure = rand(-500, -1000) * (1 + (rand(-1, 1) / 4));
+                    $expenditure = mt_rand(-1000, -500) * (1 + (mt_rand(-1, 1) / 4));
                     $income = null;
                 } elseif ($incomeOrExpenditure == 1) {
-                    $expenditure = rand(-500, -1000) * (1 + (rand(-1, 1) / 4));
-                    $income = rand(500, 1000) * (1 + (rand(-1, 1) / 4));
+                    $expenditure = mt_rand(-1000, -500) * (1 + (mt_rand(-1, 1) / 4));
+                    $income = mt_rand(500, 1000) * (1 + (mt_rand(-1, 1) / 4));
                 } else {
                     $expenditure = null;
-                    $income = rand(500, 1000) * (1 + (rand(-1, 1) / 4));
+                    $income = mt_rand(500, 1000) * (1 + (mt_rand(-1, 1) / 4));
                 }
                 $dataArray = [$year,
                     $period,
@@ -124,10 +127,12 @@ $autoFilter->getColumn('C')
         'japan'
     )
     ->setRuleType(Rule::AUTOFILTER_RULETYPE_CUSTOMFILTER);
-// Filter the Date column on a filter value of the first day of every period of the current year
+// Filter the Date column on a filter value of the last day of every period of the current year
 // We us a dateGroup ruletype for this, although it is still a standard filter
 foreach ($periods as $period) {
-    $endDate = date('t', mktime(0, 0, 0, $period, 1, (int) $currentYear));
+    $dateString = sprintf('%04d-%02d-01T00:00:00', $currentYear, $period);
+    $dateTime = new DateTime($dateString);
+    $endDate = (int) $dateTime->format('t');
 
     $autoFilter->getColumn('D')
         ->setFilterType(Column::AUTOFILTER_FILTERTYPE_FILTER)

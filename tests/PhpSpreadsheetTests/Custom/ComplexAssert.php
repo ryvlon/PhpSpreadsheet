@@ -6,9 +6,16 @@ use Complex\Complex;
 
 class ComplexAssert
 {
+    /**
+     * @var string
+     */
     private $errorMessage = '';
 
-    private function testExpectedExceptions($expected, $actual)
+    /**
+     * @param mixed $expected
+     * @param mixed $actual
+     */
+    private function testExpectedExceptions($expected, $actual): bool
     {
         //    Expecting an error, so we do a straight string comparison
         if ($expected === $actual) {
@@ -21,36 +28,30 @@ class ComplexAssert
         return false;
     }
 
-    private function adjustDelta($expected, $actual, $delta)
+    private function adjustDelta(float $expected, float $actual, float $delta): float
     {
         $adjustedDelta = $delta;
 
         if (abs($actual) > 10 && abs($expected) > 10) {
             $variance = floor(log10(abs($expected)));
-            $adjustedDelta *= pow(10, $variance);
+            $adjustedDelta *= 10 ** $variance;
         }
 
         return $adjustedDelta > 1.0 ? 1.0 : $adjustedDelta;
     }
 
-    public function assertComplexEquals($expected, $actual, $delta = 0)
+    /**
+     * @param mixed $expected
+     * @param mixed $actual
+     */
+    public function assertComplexEquals($expected, $actual, float $delta = 0): bool
     {
-        if ($expected === INF || $expected[0] === '#') {
+        if ($expected === INF || (is_string($expected) && $expected[0] === '#')) {
             return $this->testExpectedExceptions($expected, $actual);
         }
 
         $expectedComplex = new Complex($expected);
         $actualComplex = new Complex($actual);
-
-        if (!is_numeric($actualComplex->getReal()) || !is_numeric($expectedComplex->getReal())) {
-            if ($actualComplex->getReal() !== $expectedComplex->getReal()) {
-                $this->errorMessage = 'Mismatched String: ' . $actualComplex->getReal() . ' !== ' . $expectedComplex->getReal();
-
-                return false;
-            }
-
-            return true;
-        }
 
         $adjustedDelta = $this->adjustDelta($expectedComplex->getReal(), $actualComplex->getReal(), $delta);
         if (abs($actualComplex->getReal() - $expectedComplex->getReal()) > $adjustedDelta) {
@@ -75,7 +76,7 @@ class ComplexAssert
         return true;
     }
 
-    public function getErrorMessage()
+    public function getErrorMessage(): string
     {
         return $this->errorMessage;
     }

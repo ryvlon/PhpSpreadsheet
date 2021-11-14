@@ -7,7 +7,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class ReadFilterTest extends AbstractFunctional
 {
-    public function providerCellsValues()
+    public function providerCellsValues(): array
     {
         $cellValues = [
             // one argument as a multidimensional array
@@ -34,10 +34,9 @@ class ReadFilterTest extends AbstractFunctional
      *
      * @dataProvider providerCellsValues
      *
-     * @param  array $arrayData
      * @param mixed $format
      */
-    public function testXlsxLoadWithoutReadFilter($format, array $arrayData)
+    public function testXlsxLoadWithoutReadFilter($format, array $arrayData): void
     {
         $spreadsheet = new Spreadsheet();
 
@@ -62,19 +61,18 @@ class ReadFilterTest extends AbstractFunctional
      *
      * @dataProvider providerCellsValues
      *
-     * @param array $arrayData
      * @param mixed $format
      */
-    public function testXlsxLoadWithReadFilter($format, array $arrayData)
+    public function testXlsxLoadWithReadFilter($format, array $arrayData): void
     {
         $spreadsheet = new Spreadsheet();
         $spreadsheet->getActiveSheet()->fromArray($arrayData, null, 'A1');
 
-        $reloadedSpreadsheet = $this->writeAndReload($spreadsheet, $format, function ($reader) {
+        $reloadedSpreadsheet = $this->writeAndReload($spreadsheet, $format, function ($reader): void {
             // Create a stub for the readFilter class.
             $readFilterStub = $this->createMock(IReadFilter::class);
             $readFilterStub->method('readCell')
-                ->will($this->returnCallback([$this, 'readFilterReadCell']));
+                ->willReturnCallback([$this, 'readFilterReadCell']);
             // apply filter
             $reader->setReadFilter($readFilterStub);
         });
@@ -92,13 +90,13 @@ class ReadFilterTest extends AbstractFunctional
     }
 
     /**
-     * @see \PhpOffice\PhpSpreadsheet\Reader\IReadFilter::readCell()
-     *
      * @param string $column Column address (as a string value like "A", or "IV")
      * @param int $row Row number
      * @param string $worksheetName Optional worksheet name
      *
      * @return bool
+     *
+     * @see \PhpOffice\PhpSpreadsheet\Reader\IReadFilter::readCell()
      */
     public function readFilterReadCell($column, $row, $worksheetName = '')
     {
@@ -114,8 +112,10 @@ class ReadFilterTest extends AbstractFunctional
         }
 
         $col = sprintf('%04s', $column);
-        if ($col > sprintf('%04s', $columnMax) ||
-            $col < sprintf('%04s', $columnMin)) {
+        if (
+            $col > sprintf('%04s', $columnMax) ||
+            $col < sprintf('%04s', $columnMin)
+        ) {
             return false;
         }
 

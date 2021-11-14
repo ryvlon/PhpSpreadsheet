@@ -14,121 +14,9 @@ use PHPUnit\Framework\TestCase;
  */
 class LookupRefTest extends TestCase
 {
-    public function setUp()
+    protected function setUp(): void
     {
         Functions::setCompatibilityMode(Functions::COMPATIBILITY_EXCEL);
-    }
-
-    /**
-     * @dataProvider providerHLOOKUP
-     *
-     * @param mixed $expectedResult
-     */
-    public function testHLOOKUP($expectedResult, ...$args)
-    {
-        $result = LookupRef::HLOOKUP(...$args);
-        self::assertEquals($expectedResult, $result);
-    }
-
-    public function providerHLOOKUP()
-    {
-        return require 'data/Calculation/LookupRef/HLOOKUP.php';
-    }
-
-    /**
-     * @dataProvider providerVLOOKUP
-     *
-     * @param mixed $expectedResult
-     */
-    public function testVLOOKUP($expectedResult, ...$args)
-    {
-        $result = LookupRef::VLOOKUP(...$args);
-        self::assertEquals($expectedResult, $result);
-    }
-
-    public function providerVLOOKUP()
-    {
-        return require 'data/Calculation/LookupRef/VLOOKUP.php';
-    }
-
-    /**
-     * @dataProvider providerLOOKUP
-     *
-     * @param mixed $expectedResult
-     */
-    public function testLOOKUP($expectedResult, ...$args)
-    {
-        $result = LookupRef::LOOKUP(...$args);
-        self::assertEquals($expectedResult, $result);
-    }
-
-    public function providerLOOKUP()
-    {
-        return require 'data/Calculation/LookupRef/LOOKUP.php';
-    }
-
-    /**
-     * @dataProvider providerMATCH
-     *
-     * @param mixed $expectedResult
-     */
-    public function testMATCH($expectedResult, ...$args)
-    {
-        $result = LookupRef::MATCH(...$args);
-        self::assertEquals($expectedResult, $result);
-    }
-
-    public function providerMATCH()
-    {
-        return require 'data/Calculation/LookupRef/MATCH.php';
-    }
-
-    /**
-     * @dataProvider providerINDEX
-     *
-     * @param mixed $expectedResult
-     */
-    public function testINDEX($expectedResult, ...$args)
-    {
-        $result = LookupRef::INDEX(...$args);
-        self::assertEquals($expectedResult, $result);
-    }
-
-    public function providerINDEX()
-    {
-        return require 'data/Calculation/LookupRef/INDEX.php';
-    }
-
-    /**
-     * @dataProvider providerCOLUMNS
-     *
-     * @param mixed $expectedResult
-     */
-    public function testCOLUMNS($expectedResult, ...$args)
-    {
-        $result = LookupRef::COLUMNS(...$args);
-        self::assertEquals($expectedResult, $result);
-    }
-
-    public function providerCOLUMNS()
-    {
-        return require 'data/Calculation/LookupRef/COLUMNS.php';
-    }
-
-    /**
-     * @dataProvider providerROWS
-     *
-     * @param mixed $expectedResult
-     */
-    public function testROWS($expectedResult, ...$args)
-    {
-        $result = LookupRef::ROWS(...$args);
-        self::assertEquals($expectedResult, $result);
-    }
-
-    public function providerROWS()
-    {
-        return require 'data/Calculation/LookupRef/ROWS.php';
     }
 
     /**
@@ -138,7 +26,7 @@ class LookupRefTest extends TestCase
      * @param mixed $reference       Reference to the cell we wish to test
      * @param mixed $value           Value of the cell we wish to test
      */
-    public function testFormulaText($expectedResult, $reference, $value = 'undefined')
+    public function testFormulaText($expectedResult, $reference, $value = 'undefined'): void
     {
         $ourCell = null;
         if ($value !== 'undefined') {
@@ -146,43 +34,53 @@ class LookupRefTest extends TestCase
                 ->disableOriginalConstructor()
                 ->getMock();
             $remoteCell->method('isFormula')
-                ->will($this->returnValue(substr($value, 0, 1) == '='));
+                ->willReturn(substr($value, 0, 1) == '=');
             $remoteCell->method('getValue')
-                ->will($this->returnValue($value));
+                ->willReturn($value);
 
             $remoteSheet = $this->getMockBuilder(Worksheet::class)
                 ->disableOriginalConstructor()
                 ->getMock();
+            $remoteSheet->method('cellExists')
+                ->willReturn(true);
             $remoteSheet->method('getCell')
-                ->will($this->returnValue($remoteCell));
+                ->willReturn($remoteCell);
 
             $workbook = $this->getMockBuilder(Spreadsheet::class)
                 ->disableOriginalConstructor()
                 ->getMock();
             $workbook->method('getSheetByName')
-                ->will($this->returnValue($remoteSheet));
+                ->willReturn($remoteSheet);
 
             $sheet = $this->getMockBuilder(Worksheet::class)
                 ->disableOriginalConstructor()
                 ->getMock();
+            $sheet->method('cellExists')
+                ->willReturn(true);
             $sheet->method('getCell')
-                ->will($this->returnValue($remoteCell));
+                ->willReturn($remoteCell);
             $sheet->method('getParent')
-                ->will($this->returnValue($workbook));
+                ->willReturn($workbook);
 
             $ourCell = $this->getMockBuilder(Cell::class)
                 ->disableOriginalConstructor()
                 ->getMock();
             $ourCell->method('getWorksheet')
-                ->will($this->returnValue($sheet));
+                ->willReturn($sheet);
         }
 
         $result = LookupRef::FORMULATEXT($reference, $ourCell);
-        self::assertEquals($expectedResult, $result, null, 1E-8);
+        self::assertEqualsWithDelta($expectedResult, $result, 1E-8);
     }
 
-    public function providerFormulaText()
+    public function providerFormulaText(): array
     {
-        return require 'data/Calculation/LookupRef/FORMULATEXT.php';
+        return require 'tests/data/Calculation/LookupRef/FORMULATEXT.php';
+    }
+
+    public function testFormulaTextWithoutCell(): void
+    {
+        $result = LookupRef::FORMULATEXT('A1');
+        self::assertEquals(Functions::REF(), $result);
     }
 }

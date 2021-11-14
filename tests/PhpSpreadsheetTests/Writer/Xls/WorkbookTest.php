@@ -1,11 +1,12 @@
 <?php
 
-namespace PhpOffice\PhpSpreadsheetTests\Writer\Xls\Workbook;
+namespace PhpOffice\PhpSpreadsheetTests\Writer\Xls;
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xls\Parser;
 use PhpOffice\PhpSpreadsheet\Writer\Xls\Workbook;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 class WorkbookTest extends TestCase
 {
@@ -14,27 +15,24 @@ class WorkbookTest extends TestCase
      */
     private $workbook;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $spreadsheet = new Spreadsheet();
         $strTotal = 0;
         $strUnique = 0;
         $str_table = [];
         $colors = [];
-        $parser = new Parser();
+        $parser = new Parser($spreadsheet);
 
         $this->workbook = new Workbook($spreadsheet, $strTotal, $strUnique, $str_table, $colors, $parser);
     }
 
     /**
      * @dataProvider providerAddColor
-     *
-     * @param array $testColors
-     * @param array $expectedResult
      */
-    public function testAddColor(array $testColors, array $expectedResult)
+    public function testAddColor(array $testColors, array $expectedResult): void
     {
-        $workbookReflection = new \ReflectionClass(Workbook::class);
+        $workbookReflection = new ReflectionClass(Workbook::class);
         $methodAddColor = $workbookReflection->getMethod('addColor');
         $propertyPalette = $workbookReflection->getProperty('palette');
         $methodAddColor->setAccessible(true);
@@ -49,11 +47,11 @@ class WorkbookTest extends TestCase
         self::assertEquals($expectedResult, $palette);
     }
 
-    public function providerAddColor()
+    public function providerAddColor(): array
     {
         $this->setUp();
 
-        $workbookReflection = new \ReflectionClass(Workbook::class);
+        $workbookReflection = new ReflectionClass(Workbook::class);
         $propertyPalette = $workbookReflection->getProperty('palette');
         $propertyPalette->setAccessible(true);
 

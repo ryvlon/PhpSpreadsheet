@@ -23,13 +23,13 @@ class ChunkReadFilter implements IReadFilter
      * @param mixed $startRow
      * @param mixed $chunkSize
      */
-    public function setRows($startRow, $chunkSize)
+    public function setRows($startRow, $chunkSize): void
     {
         $this->startRow = $startRow;
         $this->endRow = $startRow + $chunkSize;
     }
 
-    public function readCell($column, $row, $worksheetName = '')
+    public function readCell($columnAddress, $row, $worksheetName = '')
     {
         //  Only read the heading row, and the rows that are configured in $this->_startRow and $this->_endRow
         if (($row == 1) || ($row >= $this->startRow && $row < $this->endRow)) {

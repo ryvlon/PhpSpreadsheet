@@ -49,7 +49,7 @@ class Column
     /**
      * Autofilter.
      *
-     * @var AutoFilter
+     * @var null|AutoFilter
      */
     private $parent;
 
@@ -77,31 +77,31 @@ class Column
     /**
      * Autofilter Column Rules.
      *
-     * @var array of Column\Rule
+     * @var Column\Rule[]
      */
     private $ruleset = [];
 
     /**
      * Autofilter Column Dynamic Attributes.
      *
-     * @var array of mixed
+     * @var mixed[]
      */
     private $attributes = [];
 
     /**
      * Create a new Column.
      *
-     * @param string $pColumn Column (e.g. A)
-     * @param AutoFilter $pParent Autofilter for this column
+     * @param string $column Column (e.g. A)
+     * @param AutoFilter $parent Autofilter for this column
      */
-    public function __construct($pColumn, AutoFilter $pParent = null)
+    public function __construct($column, ?AutoFilter $parent = null)
     {
-        $this->columnIndex = $pColumn;
-        $this->parent = $pParent;
+        $this->columnIndex = $column;
+        $this->parent = $parent;
     }
 
     /**
-     * Get AutoFilter Column Index.
+     * Get AutoFilter column index as string eg: 'A'.
      *
      * @return string
      */
@@ -111,23 +111,21 @@ class Column
     }
 
     /**
-     * Set AutoFilter Column Index.
+     * Set AutoFilter column index as string eg: 'A'.
      *
-     * @param string $pColumn Column (e.g. A)
+     * @param string $column Column (e.g. A)
      *
-     * @throws PhpSpreadsheetException
-     *
-     * @return Column
+     * @return $this
      */
-    public function setColumnIndex($pColumn)
+    public function setColumnIndex($column)
     {
         // Uppercase coordinate
-        $pColumn = strtoupper($pColumn);
+        $column = strtoupper($column);
         if ($this->parent !== null) {
-            $this->parent->testColumnInRange($pColumn);
+            $this->parent->testColumnInRange($column);
         }
 
-        $this->columnIndex = $pColumn;
+        $this->columnIndex = $column;
 
         return $this;
     }
@@ -135,7 +133,7 @@ class Column
     /**
      * Get this Column's AutoFilter Parent.
      *
-     * @return AutoFilter
+     * @return null|AutoFilter
      */
     public function getParent()
     {
@@ -145,13 +143,13 @@ class Column
     /**
      * Set this Column's AutoFilter Parent.
      *
-     * @param AutoFilter $pParent
+     * @param AutoFilter $parent
      *
-     * @return Column
+     * @return $this
      */
-    public function setParent(AutoFilter $pParent = null)
+    public function setParent(?AutoFilter $parent = null)
     {
-        $this->parent = $pParent;
+        $this->parent = $parent;
 
         return $this;
     }
@@ -169,19 +167,17 @@ class Column
     /**
      * Set AutoFilter Type.
      *
-     * @param string $pFilterType
+     * @param string $filterType
      *
-     * @throws PhpSpreadsheetException
-     *
-     * @return Column
+     * @return $this
      */
-    public function setFilterType($pFilterType)
+    public function setFilterType($filterType)
     {
-        if (!in_array($pFilterType, self::$filterTypes)) {
+        if (!in_array($filterType, self::$filterTypes)) {
             throw new PhpSpreadsheetException('Invalid filter type for column AutoFilter.');
         }
 
-        $this->filterType = $pFilterType;
+        $this->filterType = $filterType;
 
         return $this;
     }
@@ -199,21 +195,19 @@ class Column
     /**
      * Set AutoFilter Multiple Rules And/Or.
      *
-     * @param string $pJoin And/Or
+     * @param string $join And/Or
      *
-     * @throws PhpSpreadsheetException
-     *
-     * @return Column
+     * @return $this
      */
-    public function setJoin($pJoin)
+    public function setJoin($join)
     {
         // Lowercase And/Or
-        $pJoin = strtolower($pJoin);
-        if (!in_array($pJoin, self::$ruleJoins)) {
+        $join = strtolower($join);
+        if (!in_array($join, self::$ruleJoins)) {
             throw new PhpSpreadsheetException('Invalid rule connection for column AutoFilter.');
         }
 
-        $this->join = $pJoin;
+        $this->join = $join;
 
         return $this;
     }
@@ -221,11 +215,11 @@ class Column
     /**
      * Set AutoFilter Attributes.
      *
-     * @param string[] $attributes
+     * @param mixed[] $attributes
      *
-     * @return Column
+     * @return $this
      */
-    public function setAttributes(array $attributes)
+    public function setAttributes($attributes)
     {
         $this->attributes = $attributes;
 
@@ -235,14 +229,14 @@ class Column
     /**
      * Set An AutoFilter Attribute.
      *
-     * @param string $pName Attribute Name
-     * @param string $pValue Attribute Value
+     * @param string $name Attribute Name
+     * @param string $value Attribute Value
      *
-     * @return Column
+     * @return $this
      */
-    public function setAttribute($pName, $pValue)
+    public function setAttribute($name, $value)
     {
-        $this->attributes[$pName] = $pValue;
+        $this->attributes[$name] = $value;
 
         return $this;
     }
@@ -250,7 +244,7 @@ class Column
     /**
      * Get AutoFilter Column Attributes.
      *
-     * @return string[]
+     * @return int[]|string[]
      */
     public function getAttributes()
     {
@@ -260,17 +254,22 @@ class Column
     /**
      * Get specific AutoFilter Column Attribute.
      *
-     * @param string $pName Attribute Name
+     * @param string $name Attribute Name
      *
-     * @return string
+     * @return null|int|string
      */
-    public function getAttribute($pName)
+    public function getAttribute($name)
     {
-        if (isset($this->attributes[$pName])) {
-            return $this->attributes[$pName];
+        if (isset($this->attributes[$name])) {
+            return $this->attributes[$name];
         }
 
         return null;
+    }
+
+    public function ruleCount(): int
+    {
+        return count($this->ruleset);
     }
 
     /**
@@ -286,17 +285,17 @@ class Column
     /**
      * Get a specified AutoFilter Column Rule.
      *
-     * @param int $pIndex Rule index in the ruleset array
+     * @param int $index Rule index in the ruleset array
      *
      * @return Column\Rule
      */
-    public function getRule($pIndex)
+    public function getRule($index)
     {
-        if (!isset($this->ruleset[$pIndex])) {
-            $this->ruleset[$pIndex] = new Column\Rule($this);
+        if (!isset($this->ruleset[$index])) {
+            $this->ruleset[$index] = new Column\Rule($this);
         }
 
-        return $this->ruleset[$pIndex];
+        return $this->ruleset[$index];
     }
 
     /**
@@ -314,14 +313,12 @@ class Column
     /**
      * Add a new AutoFilter Column Rule to the ruleset.
      *
-     * @param Column\Rule $pRule
-     *
-     * @return Column
+     * @return $this
      */
-    public function addRule(Column\Rule $pRule)
+    public function addRule(Column\Rule $rule)
     {
-        $pRule->setParent($this);
-        $this->ruleset[] = $pRule;
+        $rule->setParent($this);
+        $this->ruleset[] = $rule;
 
         return $this;
     }
@@ -330,14 +327,14 @@ class Column
      * Delete a specified AutoFilter Column Rule
      * If the number of rules is reduced to 1, then we reset And/Or logic to Or.
      *
-     * @param int $pIndex Rule index in the ruleset array
+     * @param int $index Rule index in the ruleset array
      *
-     * @return Column
+     * @return $this
      */
-    public function deleteRule($pIndex)
+    public function deleteRule($index)
     {
-        if (isset($this->ruleset[$pIndex])) {
-            unset($this->ruleset[$pIndex]);
+        if (isset($this->ruleset[$index])) {
+            unset($this->ruleset[$index]);
             //    If we've just deleted down to a single rule, then reset And/Or joining to Or
             if (count($this->ruleset) <= 1) {
                 $this->setJoin(self::AUTOFILTER_COLUMN_JOIN_OR);
@@ -350,7 +347,7 @@ class Column
     /**
      * Delete all AutoFilter Column Rules.
      *
-     * @return Column
+     * @return $this
      */
     public function clearRules()
     {
@@ -378,8 +375,6 @@ class Column
                     $cloned->setParent($this); // attach the new cloned Rule to this new cloned Autofilter Cloned object
                     $this->ruleset[$k] = $cloned;
                 }
-            } elseif (is_object($value)) {
-                $this->$key = clone $value;
             } else {
                 $this->$key = $value;
             }

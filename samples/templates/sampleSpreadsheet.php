@@ -31,7 +31,9 @@ $spreadsheet->getProperties()->setCreator('Maarten Balliauw')
 $helper->log('Add some data');
 $spreadsheet->setActiveSheetIndex(0);
 $spreadsheet->getActiveSheet()->setCellValue('B1', 'Invoice');
-$spreadsheet->getActiveSheet()->setCellValue('D1', Date::PHPToExcel(gmmktime(0, 0, 0, date('m'), date('d'), date('Y'))));
+$date = new DateTime('now');
+$date->setTime(0, 0, 0);
+$spreadsheet->getActiveSheet()->setCellValue('D1', Date::PHPToExcel($date));
 $spreadsheet->getActiveSheet()->getStyle('D1')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
 $spreadsheet->getActiveSheet()->setCellValue('E1', '#12566');
 
@@ -184,59 +186,59 @@ $spreadsheet->getActiveSheet()->getStyle('A1:E1')->getFill()->getStartColor()->s
 $helper->log('Set style for header row using alternative method');
 $spreadsheet->getActiveSheet()->getStyle('A3:E3')->applyFromArray(
     [
-            'font' => [
-                'bold' => true,
+        'font' => [
+            'bold' => true,
+        ],
+        'alignment' => [
+            'horizontal' => Alignment::HORIZONTAL_RIGHT,
+        ],
+        'borders' => [
+            'top' => [
+                'borderStyle' => Border::BORDER_THIN,
             ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_RIGHT,
+        ],
+        'fill' => [
+            'fillType' => Fill::FILL_GRADIENT_LINEAR,
+            'rotation' => 90,
+            'startColor' => [
+                'argb' => 'FFA0A0A0',
             ],
-            'borders' => [
-                'top' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                ],
+            'endColor' => [
+                'argb' => 'FFFFFFFF',
             ],
-            'fill' => [
-                'fillType' => Fill::FILL_GRADIENT_LINEAR,
-                'rotation' => 90,
-                'startColor' => [
-                    'argb' => 'FFA0A0A0',
-                ],
-                'endColor' => [
-                    'argb' => 'FFFFFFFF',
-                ],
-            ],
-        ]
+        ],
+    ]
 );
 
 $spreadsheet->getActiveSheet()->getStyle('A3')->applyFromArray(
     [
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_LEFT,
+        'alignment' => [
+            'horizontal' => Alignment::HORIZONTAL_LEFT,
+        ],
+        'borders' => [
+            'left' => [
+                'borderStyle' => Border::BORDER_THIN,
             ],
-            'borders' => [
-                'left' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                ],
-            ],
-        ]
+        ],
+    ]
 );
 
 $spreadsheet->getActiveSheet()->getStyle('B3')->applyFromArray(
     [
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_LEFT,
-            ],
-        ]
+        'alignment' => [
+            'horizontal' => Alignment::HORIZONTAL_LEFT,
+        ],
+    ]
 );
 
 $spreadsheet->getActiveSheet()->getStyle('E3')->applyFromArray(
     [
-            'borders' => [
-                'right' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                ],
+        'borders' => [
+            'right' => [
+                'borderStyle' => Border::BORDER_THIN,
             ],
-        ]
+        ],
+    ]
 );
 
 // Unprotect a cell
