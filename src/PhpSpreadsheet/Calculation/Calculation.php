@@ -4230,7 +4230,7 @@ class Calculation
                         if (ctype_digit($val) && $val <= 1048576) {
                             //    Row range
                             $stackItemType = 'Row Reference';
-                            /** @var string */
+                            /** @var int $valx */
                             $valx = $val;
                             $endRowColRef = ($refSheet !== null) ? $refSheet->getHighestDataColumn($valx) : 'XFD'; //    Max 16,384 columns for Excel2007
                             $val = "{$rangeWS2}{$endRowColRef}{$val}";
@@ -5229,15 +5229,22 @@ class Calculation
         return $result;
     }
 
-    // trigger an error, but nicely, if need be
-    protected function raiseFormulaError($errorMessage)
+    /**
+     * Trigger an error, but nicely, if need be.
+     *
+     * @return false
+     */
+    protected function raiseFormulaError(string $errorMessage)
     {
         $this->formulaError = $errorMessage;
         $this->cyclicReferenceStack->clear();
         if (!$this->suppressFormulaErrors) {
             throw new Exception($errorMessage);
         }
-        trigger_error($errorMessage, E_USER_ERROR);
+
+        if (strlen($errorMessage) > 0) {
+            trigger_error($errorMessage, E_USER_ERROR);
+        }
 
         return false;
     }

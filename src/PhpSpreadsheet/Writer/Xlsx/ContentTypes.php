@@ -158,6 +158,23 @@ class ContentTypes extends WriterPart
                     }
                 }
             }
+
+            if (count($spreadsheet->getSheet($i)->getComments()) > 0) {
+                foreach ($spreadsheet->getSheet($i)->getComments() as $comment) {
+                    if (!$comment->hasBackgroundImage()) {
+                        continue;
+                    }
+
+                    $bgImage = $comment->getBackgroundImage();
+                    $bgImageExtentionKey = strtolower($bgImage->getImageFileExtensionForSave(false));
+
+                    if (!isset($aMediaContentTypes[$bgImageExtentionKey])) {
+                        $aMediaContentTypes[$bgImageExtentionKey] = $bgImage->getImageMimeType();
+
+                        $this->writeDefaultContentType($objWriter, $bgImageExtentionKey, $aMediaContentTypes[$bgImageExtentionKey]);
+                    }
+                }
+            }
         }
 
         // unparsed defaults
@@ -201,7 +218,6 @@ class ContentTypes extends WriterPart
     /**
      * Write Default content type.
      *
-     * @param XMLWriter $objWriter XML Writer
      * @param string $partName Part name
      * @param string $contentType Content type
      */
@@ -221,7 +237,6 @@ class ContentTypes extends WriterPart
     /**
      * Write Override content type.
      *
-     * @param XMLWriter $objWriter XML Writer
      * @param string $partName Part name
      * @param string $contentType Content type
      */

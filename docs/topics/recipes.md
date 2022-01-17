@@ -303,6 +303,21 @@ $spreadsheet->getActiveSheet()->getPageSetup()
 Note that there are additional page settings available. Please refer to
 the [API documentation](https://phpoffice.github.io/PhpSpreadsheet) for all possible options.
 
+The default papersize is initially PAPERSIZE_LETTER. However, this default
+can be changed for new sheets with the following call:
+```php
+\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::setPaperSizeDefault(
+    \PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4
+);
+```
+
+The default orientation is ORIENTATION_DEFAULT, which will be treated as Portrait in Excel. However, this default can be changed for new sheets with the following call:
+```php
+\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::setOrientationDefault(
+    \PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE
+);
+```
+
 ### Page Setup: Scaling options
 
 The page setup scaling options in PhpSpreadsheet relate directly to the
@@ -942,8 +957,25 @@ $spreadsheet->getActiveSheet()
     ->getComment('E11')
     ->getText()->createTextRun('Total amount on the current invoice, excluding VAT.');
 ```
-
 ![08-cell-comment.png](./images/08-cell-comment.png)
+
+## Add a comment with background image to a cell
+
+To add a comment with background image to a cell, use the following code:
+
+```php
+$sheet = $spreadsheet->getActiveSheet();
+$sheet->setCellValue('B5', 'Gibli Chromo');
+// Add png image to comment background
+$drawing = new Drawing();
+$drawing->setName('Gibli Chromo');
+$drawing->setPath('/tmp/gibli_chromo.png');
+$comment = $sheet->getComment('B5');
+$comment->setBackgroundImage($drawing);
+// Set the size of the comment equal to the size of the image 
+$comment->setSizeAsBackgroundImage();
+```
+![08-cell-comment-with-image.png](./images/08-cell-comment-with-image.png)
 
 ## Apply autofilter to a range of cells
 

@@ -4,6 +4,7 @@ namespace PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 use PhpOffice\PhpSpreadsheet\Shared\XMLWriter;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\BaseDrawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing;
 use PhpOffice\PhpSpreadsheet\Writer\Exception as WriterException;
 
@@ -317,18 +318,17 @@ class Rels extends WriterPart
         $i = 1;
         $iterator = $worksheet->getDrawingCollection()->getIterator();
         while ($iterator->valid()) {
+            $drawing = $iterator->current();
             if (
-                $iterator->current() instanceof \PhpOffice\PhpSpreadsheet\Worksheet\Drawing
-                || $iterator->current() instanceof MemoryDrawing
+                $drawing instanceof \PhpOffice\PhpSpreadsheet\Worksheet\Drawing
+                || $drawing instanceof MemoryDrawing
             ) {
                 // Write relationship for image drawing
-                /** @var \PhpOffice\PhpSpreadsheet\Worksheet\Drawing $drawing */
-                $drawing = $iterator->current();
                 $this->writeRelationship(
                     $objWriter,
                     $i,
                     'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
-                    '../media/' . str_replace(' ', '', $drawing->getIndexedFilename())
+                    '../media/' . $drawing->getIndexedFilename()
                 );
 
                 $i = $this->writeDrawingHyperLink($objWriter, $drawing, $i);
@@ -396,10 +396,46 @@ class Rels extends WriterPart
         return $objWriter->getData();
     }
 
+    public function writeVMLDrawingRelationships(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $worksheet): string
+    {
+        // Create XML writer
+        $objWriter = null;
+        if ($this->getParentWriter()->getUseDiskCaching()) {
+            $objWriter = new XMLWriter(XMLWriter::STORAGE_DISK, $this->getParentWriter()->getDiskCachingDirectory());
+        } else {
+            $objWriter = new XMLWriter(XMLWriter::STORAGE_MEMORY);
+        }
+
+        // XML header
+        $objWriter->startDocument('1.0', 'UTF-8', 'yes');
+
+        // Relationships
+        $objWriter->startElement('Relationships');
+        $objWriter->writeAttribute('xmlns', 'http://schemas.openxmlformats.org/package/2006/relationships');
+
+        // Loop through images and write relationships
+        foreach ($worksheet->getComments() as $comment) {
+            if (!$comment->hasBackgroundImage()) {
+                continue;
+            }
+
+            $bgImage = $comment->getBackgroundImage();
+            $this->writeRelationship(
+                $objWriter,
+                $bgImage->getImageIndex(),
+                'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
+                '../media/' . $bgImage->getMediaFilename()
+            );
+        }
+
+        $objWriter->endElement();
+
+        return $objWriter->getData();
+    }
+
     /**
      * Write Override content type.
      *
-     * @param XMLWriter $objWriter XML Writer
      * @param int $id Relationship ID. rId will be prepended!
      * @param string $type Relationship type
      * @param string $target Relationship target
@@ -424,12 +460,7 @@ class Rels extends WriterPart
         }
     }
 
-    /**
-     * @param \PhpOffice\PhpSpreadsheet\Worksheet\Drawing $drawing
-     *
-     * @return int
-     */
-    private function writeDrawingHyperLink($objWriter, $drawing, $i)
+    private function writeDrawingHyperLink(XMLWriter $objWriter, BaseDrawing $drawing, int $i): int
     {
         if ($drawing->getHyperlink() === null) {
             return $i;

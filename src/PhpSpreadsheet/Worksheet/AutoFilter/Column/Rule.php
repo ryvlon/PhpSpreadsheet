@@ -125,15 +125,7 @@ class Rule
         self::AUTOFILTER_RULETYPE_DYNAMIC_BELOWAVERAGE,
     ];
 
-    /*
-     *    The only valid filter rule operators for filter and customFilter types are:
-     *        <xsd:enumeration value="equal"/>
-     *        <xsd:enumeration value="lessThan"/>
-     *        <xsd:enumeration value="lessThanOrEqual"/>
-     *        <xsd:enumeration value="notEqual"/>
-     *        <xsd:enumeration value="greaterThanOrEqual"/>
-     *        <xsd:enumeration value="greaterThan"/>
-     */
+    // Filter rule operators for filter and customFilter types.
     const AUTOFILTER_COLUMN_RULE_EQUAL = 'equal';
     const AUTOFILTER_COLUMN_RULE_NOTEQUAL = 'notEqual';
     const AUTOFILTER_COLUMN_RULE_GREATERTHAN = 'greaterThan';
@@ -166,39 +158,17 @@ class Rule
         self::AUTOFILTER_COLUMN_RULE_TOPTEN_BOTTOM,
     ];
 
-    // Rule Operators (Numeric, Boolean etc)
-//    const AUTOFILTER_COLUMN_RULE_BETWEEN            = 'between';        //    greaterThanOrEqual 1 && lessThanOrEqual 2
+    //  Unimplented Rule Operators (Numeric, Boolean etc)
+    //    const AUTOFILTER_COLUMN_RULE_BETWEEN = 'between';        //    greaterThanOrEqual 1 && lessThanOrEqual 2
     // Rule Operators (Numeric Special) which are translated to standard numeric operators with calculated values
-//    const AUTOFILTER_COLUMN_RULE_TOPTEN                = 'topTen';            //    greaterThan calculated value
-//    const AUTOFILTER_COLUMN_RULE_TOPTENPERCENT        = 'topTenPercent';    //    greaterThan calculated value
-//    const AUTOFILTER_COLUMN_RULE_ABOVEAVERAGE        = 'aboveAverage';    //    Value is calculated as the average
-//    const AUTOFILTER_COLUMN_RULE_BELOWAVERAGE        = 'belowAverage';    //    Value is calculated as the average
     // Rule Operators (String) which are set as wild-carded values
-//    const AUTOFILTER_COLUMN_RULE_BEGINSWITH            = 'beginsWith';            // A*
-//    const AUTOFILTER_COLUMN_RULE_ENDSWITH            = 'endsWith';            // *Z
-//    const AUTOFILTER_COLUMN_RULE_CONTAINS            = 'contains';            // *B*
-//    const AUTOFILTER_COLUMN_RULE_DOESNTCONTAIN        = 'notEqual';            //    notEqual *B*
+    //    const AUTOFILTER_COLUMN_RULE_BEGINSWITH            = 'beginsWith';            // A*
+    //    const AUTOFILTER_COLUMN_RULE_ENDSWITH            = 'endsWith';            // *Z
+    //    const AUTOFILTER_COLUMN_RULE_CONTAINS            = 'contains';            // *B*
+    //    const AUTOFILTER_COLUMN_RULE_DOESNTCONTAIN        = 'notEqual';            //    notEqual *B*
     // Rule Operators (Date Special) which are translated to standard numeric operators with calculated values
-//    const AUTOFILTER_COLUMN_RULE_BEFORE                = 'lessThan';
-//    const AUTOFILTER_COLUMN_RULE_AFTER                = 'greaterThan';
-//    const AUTOFILTER_COLUMN_RULE_YESTERDAY            = 'yesterday';
-//    const AUTOFILTER_COLUMN_RULE_TODAY                = 'today';
-//    const AUTOFILTER_COLUMN_RULE_TOMORROW            = 'tomorrow';
-//    const AUTOFILTER_COLUMN_RULE_LASTWEEK            = 'lastWeek';
-//    const AUTOFILTER_COLUMN_RULE_THISWEEK            = 'thisWeek';
-//    const AUTOFILTER_COLUMN_RULE_NEXTWEEK            = 'nextWeek';
-//    const AUTOFILTER_COLUMN_RULE_LASTMONTH            = 'lastMonth';
-//    const AUTOFILTER_COLUMN_RULE_THISMONTH            = 'thisMonth';
-//    const AUTOFILTER_COLUMN_RULE_NEXTMONTH            = 'nextMonth';
-//    const AUTOFILTER_COLUMN_RULE_LASTQUARTER        = 'lastQuarter';
-//    const AUTOFILTER_COLUMN_RULE_THISQUARTER        = 'thisQuarter';
-//    const AUTOFILTER_COLUMN_RULE_NEXTQUARTER        = 'nextQuarter';
-//    const AUTOFILTER_COLUMN_RULE_LASTYEAR            = 'lastYear';
-//    const AUTOFILTER_COLUMN_RULE_THISYEAR            = 'thisYear';
-//    const AUTOFILTER_COLUMN_RULE_NEXTYEAR            = 'nextYear';
-//    const AUTOFILTER_COLUMN_RULE_YEARTODATE            = 'yearToDate';            //    <dynamicFilter val="40909" type="yearToDate" maxVal="41113"/>
-//    const AUTOFILTER_COLUMN_RULE_ALLDATESINMONTH    = 'allDatesInMonth';    //    <dynamicFilter type="M2"/> for Month/February
-//    const AUTOFILTER_COLUMN_RULE_ALLDATESINQUARTER    = 'allDatesInQuarter';    //    <dynamicFilter type="Q2"/> for Quarter 2
+    //    const AUTOFILTER_COLUMN_RULE_BEFORE                = 'lessThan';
+    //    const AUTOFILTER_COLUMN_RULE_AFTER                = 'greaterThan';
 
     /**
      * Autofilter Column.
@@ -243,6 +213,13 @@ class Rule
         $this->parent = $parent;
     }
 
+    private function setEvaluatedFalse(): void
+    {
+        if ($this->parent !== null) {
+            $this->parent->setEvaluatedFalse();
+        }
+    }
+
     /**
      * Get AutoFilter Rule Type.
      *
@@ -262,6 +239,7 @@ class Rule
      */
     public function setRuleType($ruleType)
     {
+        $this->setEvaluatedFalse();
         if (!in_array($ruleType, self::RULE_TYPES)) {
             throw new PhpSpreadsheetException('Invalid rule type for column AutoFilter Rule.');
         }
@@ -290,6 +268,7 @@ class Rule
      */
     public function setValue($value)
     {
+        $this->setEvaluatedFalse();
         if (is_array($value)) {
             $grouping = -1;
             foreach ($value as $key => $v) {
@@ -332,6 +311,7 @@ class Rule
      */
     public function setOperator($operator)
     {
+        $this->setEvaluatedFalse();
         if (empty($operator)) {
             $operator = self::AUTOFILTER_COLUMN_RULE_EQUAL;
         }
@@ -365,6 +345,7 @@ class Rule
      */
     public function setGrouping($grouping)
     {
+        $this->setEvaluatedFalse();
         if (
             ($grouping !== null) &&
             (!in_array($grouping, self::DATE_TIME_GROUPS)) &&
@@ -389,6 +370,7 @@ class Rule
      */
     public function setRule($operator, $value, $grouping = null)
     {
+        $this->setEvaluatedFalse();
         $this->setOperator($operator);
         $this->setValue($value);
         //  Only set grouping if it's been passed in as a user-supplied argument,
@@ -418,6 +400,7 @@ class Rule
      */
     public function setParent(?Column $parent = null)
     {
+        $this->setEvaluatedFalse();
         $this->parent = $parent;
 
         return $this;

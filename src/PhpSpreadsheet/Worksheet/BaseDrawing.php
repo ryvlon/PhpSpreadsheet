@@ -107,6 +107,13 @@ class BaseDrawing implements IComparable
     private $hyperlink;
 
     /**
+     * Image type.
+     *
+     * @var int
+     */
+    protected $type;
+
+    /**
      * Create a new BaseDrawing.
      */
     public function __construct()
@@ -123,6 +130,7 @@ class BaseDrawing implements IComparable
         $this->resizeProportional = true;
         $this->rotation = 0;
         $this->shadow = new Drawing\Shadow();
+        $this->type = IMAGETYPE_UNKNOWN;
 
         // Set image index
         ++self::$imageCounter;
@@ -200,7 +208,6 @@ class BaseDrawing implements IComparable
     /**
      * Set Worksheet.
      *
-     * @param Worksheet $worksheet
      * @param bool $overrideOld If a Worksheet has already been assigned, overwrite it and remove image from old Worksheet?
      *
      * @return $this
@@ -379,12 +386,12 @@ class BaseDrawing implements IComparable
      * $objDrawing->setWidthAndHeight(160,120);
      * </code>
      *
-     * @author Vincent@luo MSN:kele_100@hotmail.com
-     *
      * @param int $width
      * @param int $height
      *
      * @return $this
+     *
+     * @author Vincent@luo MSN:kele_100@hotmail.com
      */
     public function setWidthAndHeight($width, $height)
     {
@@ -467,8 +474,6 @@ class BaseDrawing implements IComparable
     /**
      * Set Shadow.
      *
-     * @param Drawing\Shadow $shadow
-     *
      * @return $this
      */
     public function setShadow(?Drawing\Shadow $shadow = null)
@@ -528,5 +533,29 @@ class BaseDrawing implements IComparable
     public function getHyperlink()
     {
         return $this->hyperlink;
+    }
+
+    /**
+     * Set Fact Sizes and Type of Image.
+     */
+    protected function setSizesAndType(string $path): void
+    {
+        if ($this->width == 0 && $this->height == 0 && $this->type == IMAGETYPE_UNKNOWN) {
+            $imageData = getimagesize($path);
+
+            if (is_array($imageData)) {
+                $this->width = $imageData[0];
+                $this->height = $imageData[1];
+                $this->type = $imageData[2];
+            }
+        }
+    }
+
+    /**
+     * Get Image Type.
+     */
+    public function getType(): int
+    {
+        return $this->type;
     }
 }

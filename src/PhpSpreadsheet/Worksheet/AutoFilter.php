@@ -35,13 +35,23 @@ class AutoFilter
      */
     private $columns = [];
 
+    /** @var bool */
+    private $evaluated = false;
+
+    public function getEvaluated(): bool
+    {
+        return $this->evaluated;
+    }
+
+    public function setEvaluated(bool $value): void
+    {
+        $this->evaluated = $value;
+    }
+
     /**
      * Create a new AutoFilter.
-     *
-     * @param string $range Cell range (i.e. A1:E10)
-     * @param Worksheet $worksheet
      */
-    public function __construct($range = '', ?Worksheet $worksheet = null)
+    public function __construct(string $range = '', ?Worksheet $worksheet = null)
     {
         $this->range = $range;
         $this->workSheet = $worksheet;
@@ -60,12 +70,11 @@ class AutoFilter
     /**
      * Set AutoFilter Parent Worksheet.
      *
-     * @param Worksheet $worksheet
-     *
      * @return $this
      */
     public function setParent(?Worksheet $worksheet = null)
     {
+        $this->evaluated = false;
         $this->workSheet = $worksheet;
 
         return $this;
@@ -82,14 +91,11 @@ class AutoFilter
     }
 
     /**
-     * Set AutoFilter Range.
-     *
-     * @param string $range Cell range (i.e. A1:E10)
-     *
-     * @return $this
+     * Set AutoFilter Cell Range.
      */
-    public function setRange($range)
+    public function setRange(string $range): self
     {
+        $this->evaluated = false;
         // extract coordinate
         [$worksheet, $range] = Worksheet::extractSheetTitle($range, true);
         if (empty($range)) {
@@ -111,6 +117,20 @@ class AutoFilter
             $colIndex = Coordinate::columnIndexFromString($key);
             if (($rangeStart[0] > $colIndex) || ($rangeEnd[0] < $colIndex)) {
                 unset($this->columns[$key]);
+            }
+        }
+
+        return $this;
+    }
+
+    public function setRangeToMaxRow(): self
+    {
+        $this->evaluated = false;
+        if ($this->workSheet !== null) {
+            $thisrange = $this->range;
+            $range = preg_replace('/\\d+$/', (string) $this->workSheet->getHighestRow(), $thisrange) ?? '';
+            if ($range !== $thisrange) {
+                $this->setRange($range);
             }
         }
 
@@ -204,6 +224,7 @@ class AutoFilter
      */
     public function setColumn($columnObjectOrString)
     {
+        $this->evaluated = false;
         if ((is_string($columnObjectOrString)) && (!empty($columnObjectOrString))) {
             $column = $columnObjectOrString;
         } elseif (is_object($columnObjectOrString) && ($columnObjectOrString instanceof AutoFilter\Column)) {
@@ -233,6 +254,7 @@ class AutoFilter
      */
     public function clearColumn($column)
     {
+        $this->evaluated = false;
         $this->testColumnInRange($column);
 
         if (isset($this->columns[$column])) {
@@ -256,6 +278,7 @@ class AutoFilter
      */
     public function shiftColumn($fromColumn, $toColumn)
     {
+        $this->evaluated = false;
         $fromColumn = strtoupper($fromColumn);
         $toColumn = strtoupper($toColumn);
 
@@ -345,6 +368,7 @@ class AutoFilter
      */
     private static function filterTestInCustomDataSet($cellValue, $ruleSet)
     {
+        /** @var array[] */
         $dataSet = $ruleSet['filterRules'];
         $join = $ruleSet['join'];
         $customRuleForBlanks = $ruleSet['customRuleForBlanks'] ?? false;
@@ -357,38 +381,45 @@ class AutoFilter
         }
         $returnVal = ($join == AutoFilter\Column::AUTOFILTER_COLUMN_JOIN_AND);
         foreach ($dataSet as $rule) {
+            /** @var string */
+            $ruleValue = $rule['value'];
+            /** @var string */
+            $ruleOperator = $rule['operator'];
+            /** @var string */
+            $cellValueString = $cellValue;
             $retVal = false;
 
-            if (is_numeric($rule['value'])) {
+            if (is_numeric($ruleValue)) {
                 //    Numeric values are tested using the appropriate operator
-                switch ($rule['operator']) {
+                $numericTest = is_numeric($cellValue);
+                switch ($ruleOperator) {
                     case Rule::AUTOFILTER_COLUMN_RULE_EQUAL:
-                        $retVal = ($cellValue == $rule['value']);
+                        $retVal = $numericTest && ($cellValue == $ruleValue);
 
                         break;
                     case Rule::AUTOFILTER_COLUMN_RULE_NOTEQUAL:
-                        $retVal = ($cellValue != $rule['value']);
+                        $retVal = !$numericTest || ($cellValue != $ruleValue);
 
                         break;
                     case Rule::AUTOFILTER_COLUMN_RULE_GREATERTHAN:
-                        $retVal = ($cellValue > $rule['value']);
+                        $retVal = $numericTest && ($cellValue > $ruleValue);
 
                         break;
                     case Rule::AUTOFILTER_COLUMN_RULE_GREATERTHANOREQUAL:
-                        $retVal = ($cellValue >= $rule['value']);
+                        $retVal = $numericTest && ($cellValue >= $ruleValue);
 
                         break;
                     case Rule::AUTOFILTER_COLUMN_RULE_LESSTHAN:
-                        $retVal = ($cellValue < $rule['value']);
+                        $retVal = $numericTest && ($cellValue < $ruleValue);
 
                         break;
                     case Rule::AUTOFILTER_COLUMN_RULE_LESSTHANOREQUAL:
-                        $retVal = ($cellValue <= $rule['value']);
+                        $retVal = $numericTest && ($cellValue <= $ruleValue);
 
                         break;
                 }
-            } elseif ($rule['value'] == '') {
-                switch ($rule['operator']) {
+            } elseif ($ruleValue == '') {
+                switch ($ruleOperator) {
                     case Rule::AUTOFILTER_COLUMN_RULE_EQUAL:
                         $retVal = (($cellValue == '') || ($cellValue === null));
 
@@ -404,7 +435,32 @@ class AutoFilter
                 }
             } else {
                 //    String values are always tested for equality, factoring in for wildcards (hence a regexp test)
-                $retVal = preg_match('/^' . $rule['value'] . '$/i', $cellValue);
+                switch ($ruleOperator) {
+                    case Rule::AUTOFILTER_COLUMN_RULE_EQUAL:
+                        $retVal = (bool) preg_match('/^' . $ruleValue . '$/i', $cellValueString);
+
+                        break;
+                    case Rule::AUTOFILTER_COLUMN_RULE_NOTEQUAL:
+                        $retVal = !((bool) preg_match('/^' . $ruleValue . '$/i', $cellValueString));
+
+                        break;
+                    case Rule::AUTOFILTER_COLUMN_RULE_GREATERTHAN:
+                        $retVal = strcasecmp($cellValueString, $ruleValue) > 0;
+
+                        break;
+                    case Rule::AUTOFILTER_COLUMN_RULE_GREATERTHANOREQUAL:
+                        $retVal = strcasecmp($cellValueString, $ruleValue) >= 0;
+
+                        break;
+                    case Rule::AUTOFILTER_COLUMN_RULE_LESSTHAN:
+                        $retVal = strcasecmp($cellValueString, $ruleValue) < 0;
+
+                        break;
+                    case Rule::AUTOFILTER_COLUMN_RULE_LESSTHANOREQUAL:
+                        $retVal = strcasecmp($cellValueString, $ruleValue) <= 0;
+
+                        break;
+                }
             }
             //    If there are multiple conditions, then we need to test both using the appropriate join operator
             switch ($join) {
@@ -675,11 +731,10 @@ class AutoFilter
      * Convert a dynamic rule daterange to a custom filter range expression for ease of calculation.
      *
      * @param string $dynamicRuleType
-     * @param AutoFilter\Column $filterColumn
      *
      * @return mixed[]
      */
-    private function dynamicFilterDateRange($dynamicRuleType, &$filterColumn)
+    private function dynamicFilterDateRange($dynamicRuleType, AutoFilter\Column &$filterColumn)
     {
         $ruleValues = [];
         $callBack = [__CLASS__, self::DATE_FUNCTIONS[$dynamicRuleType]]; // What if not found?
@@ -840,7 +895,7 @@ class AutoFilter
 
                     break;
                 case AutoFilter\Column::AUTOFILTER_FILTERTYPE_CUSTOMFILTER:
-                    $customRuleForBlanks = false;
+                    $customRuleForBlanks = true;
                     $ruleValues = [];
                     //    Build a list of the filter value selections
                     foreach ($rules as $rule) {
@@ -973,6 +1028,7 @@ class AutoFilter
             //    Set show/hide for the row based on the result of the autoFilter result
             $this->workSheet->getRowDimension((int) $row)->setVisible($result);
         }
+        $this->evaluated = true;
 
         return $this;
     }

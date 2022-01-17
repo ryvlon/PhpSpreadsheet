@@ -65,7 +65,6 @@ class Comments extends WriterPart
     /**
      * Write comment to XML format.
      *
-     * @param XMLWriter $objWriter XML Writer
      * @param string $cellReference Cell reference
      * @param Comment $comment Comment
      * @param array $authors Array of authors
@@ -158,7 +157,6 @@ class Comments extends WriterPart
     /**
      * Write VML comment to XML format.
      *
-     * @param XMLWriter $objWriter XML Writer
      * @param string $cellReference Cell reference, eg: 'A1'
      * @param Comment $comment Comment
      */
@@ -180,6 +178,12 @@ class Comments extends WriterPart
         // v:fill
         $objWriter->startElement('v:fill');
         $objWriter->writeAttribute('color2', '#' . $comment->getFillColor()->getRGB());
+        if ($comment->hasBackgroundImage()) {
+            $bgImage = $comment->getBackgroundImage();
+            $objWriter->writeAttribute('o:relid', 'rId' . $bgImage->getImageIndex());
+            $objWriter->writeAttribute('o:title', $bgImage->getName());
+            $objWriter->writeAttribute('type', 'frame');
+        }
         $objWriter->endElement();
 
         // v:shadow
